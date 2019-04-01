@@ -1,3 +1,5 @@
+import time
+
 import tensorflow as tf
 import tensorflow.models.tutorials.image.cifar10.cifar10_input as cifar10_input
 
@@ -45,7 +47,6 @@ def num2onehot(label_batch):
 
 
 if __name__ == '__main__':
-
     features = tf.placeholder(tf.float32, shape=[None, 24, 24, 3], name="input_batch")
     labels = tf.placeholder(tf.float32, shape=[None, 10], name="labels")
 
@@ -83,8 +84,9 @@ if __name__ == '__main__':
     sess = tf.InteractiveSession()
     sess.run(tf.global_variables_initializer())
 
-    writer_train = tf.summary.FileWriter("./graphs/001/train/", sess.graph)
-    writer_test = tf.summary.FileWriter("./graphs/001/test/")
+    localtime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    writer_train = tf.summary.FileWriter("./logs/" + localtime + "/train/", sess.graph)
+    writer_test = tf.summary.FileWriter("./logs/" + localtime + "/test/")
 
     train_batch_x, train_batch_y = cifar10_input.distorted_inputs("./cifar-10-batches-bin/", 32)
     test_batch_x, test_batch_y = cifar10_input.inputs(True, "./cifar-10-batches-bin/", 32)
