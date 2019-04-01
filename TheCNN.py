@@ -80,7 +80,7 @@ sess.run(tf.global_variables_initializer())
 tf.summary.scalar("Cross Entropy", cross_entropy)
 tf.summary.scalar("Accuracy", train_accuracy)
 merged_summary = tf.summary.merge_all()
-writer = tf.summary.FileWriter("./graphs", sess.graph)
+writer = tf.summary.FileWriter("./graphs/001/", sess.graph)
 
 batch_x, batch_y = cifar10_input.distorted_inputs("./cifar-10-batches-bin/", 32)
 batch_a, batch_b = cifar10_input.inputs(True, "./cifar-10-batches-bin/", 32)
