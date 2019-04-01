@@ -44,57 +44,64 @@ def num2onehot(label_batch):
     return output_batch
 
 
-features = tf.placeholder(tf.float32, shape=[None, 24, 24, 3], name="input_batch")
-labels = tf.placeholder(tf.float32, shape=[None, 10], name="labels")
+if __name__ == '__main__':
 
-with tf.variable_scope("") as scp:
-    outputs = conv2d(features, 3, 32, tf.nn.leaky_relu)
-    outputs = conv2d(outputs, 3, 32, tf.nn.leaky_relu)
-    outputs = tf.nn.max_pool(outputs, [1, 2, 2, 1], [1, 2, 2, 1], "SAME")
+    features = tf.placeholder(tf.float32, shape=[None, 24, 24, 3], name="input_batch")
+    labels = tf.placeholder(tf.float32, shape=[None, 10], name="labels")
 
-    outputs = conv2d(outputs, 3, 64, tf.nn.leaky_relu)
-    outputs = conv2d(outputs, 3, 64, tf.nn.leaky_relu)
-    outputs = tf.nn.max_pool(outputs, [1, 2, 2, 1], [1, 2, 2, 1], "SAME")
+    with tf.variable_scope("") as scp:
+        outputs = conv2d(features, 3, 32, tf.nn.leaky_relu)
+        outputs = conv2d(outputs, 3, 32, tf.nn.leaky_relu)
+        outputs = tf.nn.max_pool(outputs, [1, 2, 2, 1], [1, 2, 2, 1], "SAME")
 
-    outputs = conv2d(outputs, 3, 128, tf.nn.leaky_relu)
-    outputs = conv2d(outputs, 3, 128, tf.nn.leaky_relu)
-    outputs = tf.nn.max_pool(outputs, [1, 2, 2, 1], [1, 2, 2, 1], "SAME")
+        outputs = conv2d(outputs, 3, 64, tf.nn.leaky_relu)
+        outputs = conv2d(outputs, 3, 64, tf.nn.leaky_relu)
+        outputs = tf.nn.max_pool(outputs, [1, 2, 2, 1], [1, 2, 2, 1], "SAME")
 
-    outputs = tf.reshape(outputs, [-1, 128 * 3 * 3])
+        outputs = conv2d(outputs, 3, 128, tf.nn.leaky_relu)
+        outputs = conv2d(outputs, 3, 128, tf.nn.leaky_relu)
+        outputs = tf.nn.max_pool(outputs, [1, 2, 2, 1], [1, 2, 2, 1], "SAME")
 
-    outputs = dense(outputs, 100, tf.nn.leaky_relu)
-    outputs = dense(outputs, 10, tf.nn.softmax)
+        outputs = tf.reshape(outputs, [-1, 128 * 3 * 3])
 
-    vars = tf.contrib.framework.get_variables(scp)
+        outputs = dense(outputs, 100, tf.nn.leaky_relu)
+        outputs = dense(outputs, 10, tf.nn.softmax)
 
-cross_entropy = -tf.reduce_mean(labels * tf.log(outputs + 1e-10))
-optimizer = tf.train.AdamOptimizer(0.001)
-train_step = minimize(optimizer, cross_entropy, vars, 50)
+        vars = tf.contrib.framework.get_variables(scp)
 
-correct_prediction = tf.equal(tf.argmax(outputs, 1), tf.argmax(labels, 1))
-train_accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
+    cross_entropy = -tf.reduce_mean(labels * tf.log(outputs + 1e-10))
+    optimizer = tf.train.AdamOptimizer(0.001)
+    train_step = minimize(optimizer, cross_entropy, vars, 50)
 
-sess = tf.InteractiveSession()
-sess.run(tf.global_variables_initializer())
+    correct_prediction = tf.equal(tf.argmax(outputs, 1), tf.argmax(labels, 1))
+    train_accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 
-tf.summary.scalar("Cross Entropy", cross_entropy)
-tf.summary.scalar("Accuracy", train_accuracy)
-merged_summary = tf.summary.merge_all()
-writer = tf.summary.FileWriter("./graphs/001/", sess.graph)
+    tf.summary.scalar("Cross Entropy", cross_entropy)
+    tf.summary.scalar("Accuracy", train_accuracy)
+    merged_summary = tf.summary.merge_all()
 
-batch_x, batch_y = cifar10_input.distorted_inputs("./cifar-10-batches-bin/", 32)
-batch_a, batch_b = cifar10_input.inputs(True, "./cifar-10-batches-bin/", 32)
-tf.train.start_queue_runners()
+    sess = tf.InteractiveSession()
+    sess.run(tf.global_variables_initializer())
 
-for i in range(100000):  # 50,000*8*8=3,200,000
-    batch_xx, batch_yy = sess.run([batch_x, batch_y])
-    sess.run(train_step, {features: batch_xx, labels: num2onehot(batch_yy)})
-    if i % 100 == 0:
-        batch_xx, batch_yy = sess.run([batch_x, batch_y])
-        loss = sess.run(cross_entropy, {features: batch_xx, labels: num2onehot(batch_yy)})
+    writer_train = tf.summary.FileWriter("./graphs/001/train/", sess.graph)
+    writer_test = tf.summary.FileWriter("./graphs/001/test/")
 
-        batch_aa, batch_bb = sess.run([batch_a, batch_b])
-        accuracy = sess.run(train_accuracy, {features: batch_aa, labels: num2onehot(batch_bb)})
+    train_batch_x, train_batch_y = cifar10_input.distorted_inputs("./cifar-10-batches-bin/", 32)
+    test_batch_x, test_batch_y = cifar10_input.inputs(True, "./cifar-10-batches-bin/", 32)
+    tf.train.start_queue_runners()
 
-        summary = sess.run(merged_summary, feed_dict={cross_entropy: loss, train_accuracy: accuracy})
-        writer.add_summary(summary, global_step=i)
+    for i in range(100000):  # 50,000*8*8=3,200,000
+        batch_xx, batch_yy = sess.run([train_batch_x, train_batch_y])
+        sess.run(train_step, {features: batch_xx, labels: num2onehot(batch_yy)})
+        if i % 100 == 0:
+            batch_xx, batch_yy = sess.run([train_batch_x, train_batch_y])
+            loss = sess.run(cross_entropy, {features: batch_xx, labels: num2onehot(batch_yy)})
+            accuracy = sess.run(train_accuracy, {features: batch_xx, labels: num2onehot(batch_yy)})
+            summary_train = sess.run(merged_summary, feed_dict={cross_entropy: loss, train_accuracy: accuracy})
+            writer_train.add_summary(summary_train, global_step=i)
+
+            batch_aa, batch_bb = sess.run([test_batch_x, test_batch_y])
+            loss = sess.run(cross_entropy, {features: batch_aa, labels: num2onehot(batch_bb)})
+            accuracy = sess.run(train_accuracy, {features: batch_aa, labels: num2onehot(batch_bb)})
+            summary_test = sess.run(merged_summary, feed_dict={cross_entropy: loss, train_accuracy: accuracy})
+            writer_test.add_summary(summary_test, global_step=i)
