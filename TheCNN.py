@@ -71,7 +71,7 @@ if __name__ == '__main__':
         vars = tf.contrib.framework.get_variables(scp)
 
     cross_entropy = -tf.reduce_mean(labels * tf.log(outputs + 1e-10))
-    optimizer = tf.train.AdamOptimizer(0.001)
+    optimizer = tf.train.AdamOptimizer(0.0001)
     train_step = minimize(optimizer, cross_entropy, vars, 50)
 
     correct_prediction = tf.equal(tf.argmax(outputs, 1), tf.argmax(labels, 1))
