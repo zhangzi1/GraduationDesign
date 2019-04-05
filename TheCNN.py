@@ -17,15 +17,16 @@ def conv2d(input, kernel_size, output_channel_num, activation_function=None):
         return activation_function(output)
 
 
-def dense(input, output_size, activation_function=None):
+def dense(input, output_size, keep_prob, activation_function=None):
     weight = tf.Variable(tf.truncated_normal([input.get_shape().as_list()[-1], output_size], stddev=0.05),
                          name="weight")
     bias = tf.Variable(tf.truncated_normal([output_size], stddev=0.05), name="dense_bias")
     output = tf.matmul(input, weight) + bias
     if activation_function is None:
-        return output
+        pass
     else:
-        return activation_function(output)
+        output = activation_function(output)
+    return tf.nn.dropout(output, keep_prob)
 
 
 def minimize(optimizer, loss, vars, max_grad_norm):
@@ -49,6 +50,7 @@ def num2onehot(label_batch):
 if __name__ == '__main__':
     features = tf.placeholder(tf.float32, shape=[None, 24, 24, 3], name="input_batch")
     labels = tf.placeholder(tf.float32, shape=[None, 10], name="labels")
+    keep_prob = tf.placeholder(tf.float32, name="keep_prob")
 
     with tf.variable_scope("") as scp:
         outputs = conv2d(features, 3, 32, tf.nn.leaky_relu)
@@ -65,8 +67,8 @@ if __name__ == '__main__':
 
         outputs = tf.reshape(outputs, [-1, 128 * 3 * 3])
 
-        outputs = dense(outputs, 100, tf.nn.leaky_relu)
-        outputs = dense(outputs, 10, tf.nn.softmax)
+        outputs = dense(outputs, 100, keep_prob, tf.nn.leaky_relu)
+        outputs = dense(outputs, 10, keep_prob, tf.nn.softmax)
 
         vars = tf.contrib.framework.get_variables(scp)
 
@@ -94,16 +96,18 @@ if __name__ == '__main__':
 
     for i in range(100000):  # 50,000*8*8=3,200,000
         batch_xx, batch_yy = sess.run([train_batch_x, train_batch_y])
-        sess.run(train_step, {features: batch_xx, labels: num2onehot(batch_yy)})
+        sess.run(train_step, {features: batch_xx, labels: num2onehot(batch_yy), keep_prob: 0.5})
         if i % 100 == 0:
             batch_xx, batch_yy = sess.run([train_batch_x, train_batch_y])
-            loss = sess.run(cross_entropy, {features: batch_xx, labels: num2onehot(batch_yy)})
-            accuracy = sess.run(train_accuracy, {features: batch_xx, labels: num2onehot(batch_yy)})
+            output = sess.run(outputs, {features: batch_xx, keep_prob: 1.0})
+            loss = sess.run(cross_entropy, {outputs: output, labels: num2onehot(batch_yy)})
+            accuracy = sess.run(train_accuracy, {outputs: output, labels: num2onehot(batch_yy)})
             summary_train = sess.run(merged_summary, feed_dict={cross_entropy: loss, train_accuracy: accuracy})
             writer_train.add_summary(summary_train, global_step=i)
 
             batch_aa, batch_bb = sess.run([test_batch_x, test_batch_y])
-            loss = sess.run(cross_entropy, {features: batch_aa, labels: num2onehot(batch_bb)})
-            accuracy = sess.run(train_accuracy, {features: batch_aa, labels: num2onehot(batch_bb)})
+            output = sess.run(outputs, {features: batch_aa, keep_prob: 1.0})
+            loss = sess.run(cross_entropy, {outputs: output, labels: num2onehot(batch_bb)})
+            accuracy = sess.run(train_accuracy, {outputs: output, labels: num2onehot(batch_bb)})
             summary_test = sess.run(merged_summary, feed_dict={cross_entropy: loss, train_accuracy: accuracy})
             writer_test.add_summary(summary_test, global_step=i)
