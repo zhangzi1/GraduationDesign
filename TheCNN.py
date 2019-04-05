@@ -90,14 +90,14 @@ if __name__ == '__main__':
     writer_train = tf.summary.FileWriter("./logs/" + localtime + "/train/", sess.graph)
     writer_test = tf.summary.FileWriter("./logs/" + localtime + "/test/")
 
-    train_batch_x, train_batch_y = cifar10_input.distorted_inputs("./cifar-10-batches-bin/", 32)
-    test_batch_x, test_batch_y = cifar10_input.inputs(True, "./cifar-10-batches-bin/", 32)
+    train_batch_x, train_batch_y = cifar10_input.distorted_inputs("./cifar-10-batches-bin/", 128)
+    test_batch_x, test_batch_y = cifar10_input.inputs(True, "./cifar-10-batches-bin/", 128)
     tf.train.start_queue_runners()
 
-    for i in range(100000):  # 50,000*8*8=3,200,000
+    for i in range(25000):  # 50,000*8*8=3,200,000
         batch_xx, batch_yy = sess.run([train_batch_x, train_batch_y])
-        sess.run(train_step, {features: batch_xx, labels: num2onehot(batch_yy), keep_prob: 0.5})
-        if i % 100 == 0:
+        sess.run(train_step, {features: batch_xx, labels: num2onehot(batch_yy), keep_prob: 1.0})
+        if i % 25 == 0:
             batch_xx, batch_yy = sess.run([train_batch_x, train_batch_y])
             output = sess.run(outputs, {features: batch_xx, keep_prob: 1.0})
             loss = sess.run(cross_entropy, {outputs: output, labels: num2onehot(batch_yy)})
