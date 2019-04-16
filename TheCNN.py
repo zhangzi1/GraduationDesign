@@ -48,6 +48,15 @@ def num2onehot(label_batch):
 
 
 if __name__ == '__main__':
+
+    # -------------------------------------
+    DROPOUT = 1.0
+    BATCH_SIZE = 32
+    EPOCH = 1
+    LEARNING_RATE = 0.0001
+    ACTIVATION_FUNCTION = tf.nn.tanh
+    # -------------------------------------
+
     # 占位符
     features = tf.placeholder(tf.float32, shape=[None, 24, 24, 3], name="input_batch")
     labels = tf.placeholder(tf.float32, shape=[None, 10], name="labels")
@@ -55,23 +64,23 @@ if __name__ == '__main__':
 
     # 网络
     with tf.variable_scope("") as scp:
-        outputs = conv2d(features, 3, 32, tf.nn.leaky_relu)
-        outputs = conv2d(outputs, 3, 32, tf.nn.leaky_relu)
+        outputs = conv2d(features, 3, 32, ACTIVATION_FUNCTION)
+        outputs = conv2d(outputs, 3, 32, ACTIVATION_FUNCTION)
         outputs = tf.nn.max_pool(outputs, [1, 2, 2, 1], [1, 2, 2, 1], "SAME")
-        outputs = conv2d(outputs, 3, 64, tf.nn.leaky_relu)
-        outputs = conv2d(outputs, 3, 64, tf.nn.leaky_relu)
+        outputs = conv2d(outputs, 3, 64, ACTIVATION_FUNCTION)
+        outputs = conv2d(outputs, 3, 64, ACTIVATION_FUNCTION)
         outputs = tf.nn.max_pool(outputs, [1, 2, 2, 1], [1, 2, 2, 1], "SAME")
-        outputs = conv2d(outputs, 3, 128, tf.nn.leaky_relu)
-        outputs = conv2d(outputs, 3, 128, tf.nn.leaky_relu)
+        outputs = conv2d(outputs, 3, 128, ACTIVATION_FUNCTION)
+        outputs = conv2d(outputs, 3, 128, ACTIVATION_FUNCTION)
         outputs = tf.nn.max_pool(outputs, [1, 2, 2, 1], [1, 2, 2, 1], "SAME")
         outputs = tf.reshape(outputs, [-1, 128 * 3 * 3])
-        outputs = dense(outputs, 100, keep_prob, tf.nn.leaky_relu)
+        outputs = dense(outputs, 100, keep_prob, ACTIVATION_FUNCTION)
         outputs = dense(outputs, 10, keep_prob, tf.nn.softmax)
         vars = tf.contrib.framework.get_variables(scp)
 
     # 损失函数、优化器、梯度截取
     cross_entropy = -tf.reduce_mean(labels * tf.log(outputs + 1e-10))
-    optimizer = tf.train.AdamOptimizer(0.0001)
+    optimizer = tf.train.AdamOptimizer(LEARNING_RATE)
     train_step = minimize(optimizer, cross_entropy, vars, 50)
 
     # 正确率
@@ -93,15 +102,15 @@ if __name__ == '__main__':
     writer_test = tf.summary.FileWriter("./logs/" + localtime + "/test/")
 
     # 提取数据
-    train_batch_x, train_batch_y = cifar10_input.distorted_inputs("./cifar-10-batches-bin/", 16)
-    test_batch_x, test_batch_y = cifar10_input.inputs(True, "./cifar-10-batches-bin/", 16)
+    train_batch_x, train_batch_y = cifar10_input.distorted_inputs("./cifar-10-batches-bin/", BATCH_SIZE)
+    test_batch_x, test_batch_y = cifar10_input.inputs(True, "./cifar-10-batches-bin/", BATCH_SIZE)
     tf.train.start_queue_runners()
 
     # 训练
-    for i in range(200000):  # 50,000*8*8=3,200,000
+    for i in range(int(3200000 * EPOCH / BATCH_SIZE)):  # 50,000*8*8=3,200,000
         batch_xx, batch_yy = sess.run([train_batch_x, train_batch_y])
-        sess.run(train_step, {features: batch_xx, labels: num2onehot(batch_yy), keep_prob: 1.0})
-        if i % 200 == 0:
+        sess.run(train_step, {features: batch_xx, labels: num2onehot(batch_yy), keep_prob: DROPOUT})
+        if i % int(3200000 * EPOCH / BATCH_SIZE / 1000) == 0:
             # 记录train
             batch_xx, batch_yy = sess.run([train_batch_x, train_batch_y])
             output = sess.run(outputs, {features: batch_xx, keep_prob: 1.0})
