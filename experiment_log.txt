@@ -1,9 +1,9 @@
 No.         LR          DROPOUT     BATCH       GC          NL
 
-001         0.001       no          32          50          LR
-002*        0.0001      no          32          50          LR
-003         0.0001      0.5         32          50          LR
-004         0.0001      no          128         50          LR
-005         0.0001      no          32          no          LR
-006         0.0001      no          16          50          LR
+001         0.001       no          32          50          lrelu
+002*        0.0001      no          32          50          lrelu
+003         0.0001      0.5         32          50          lrelu
+004         0.0001      no          128         50          lrelu
+005         0.0001      no          32          no          lrelu
+006         0.0001      no          16          50          lrelu
 007         0.0001      no          32          50          tanh
