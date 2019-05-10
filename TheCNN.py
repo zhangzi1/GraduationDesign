@@ -52,7 +52,7 @@ if __name__ == '__main__':
     # -------------------------------------
     DROPOUT = 1.0
     BATCH_SIZE = 32
-    EPOCH = 1
+    EPOCH = 0.5
     LEARNING_RATE = 0.0001
     ACTIVATION_FUNCTION = tf.nn.tanh
     # -------------------------------------
@@ -107,7 +107,7 @@ if __name__ == '__main__':
     tf.train.start_queue_runners()
 
     # 训练
-    for i in range(int(3200000 * EPOCH / BATCH_SIZE)):  # 50,000*8*8=3,200,000
+    for i in range(int(6400000 * EPOCH / BATCH_SIZE)):  # 50,000*8*8=3,200,000
         batch_xx, batch_yy = sess.run([train_batch_x, train_batch_y])
         sess.run(train_step, {features: batch_xx, labels: num2onehot(batch_yy), keep_prob: DROPOUT})
         if i % int(3200000 * EPOCH / BATCH_SIZE / 1000) == 0:
